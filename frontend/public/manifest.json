@@ -1,0 +1,31 @@
+{
+  "name": "Iris — AI Eyes",
+  "short_name": "Iris",
+  "description": "AI-powered accessibility tool for visually impaired users. Describes scenes, reads text, and identifies objects — in 8 Indian languages.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#E8A33D",
+  "categories": ["accessibility", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
