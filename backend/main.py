@@ -27,22 +27,11 @@ with engine.connect() as _conn:
         _conn.execute(_sa_text("ALTER TABLE scans ADD COLUMN thumbnail TEXT"))
         _conn.commit()
 
-# CORS — always allow localhost; add production URLs via ALLOWED_ORIGINS env var
-_extra = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
-_allow_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:4173",
-    "http://127.0.0.1:4173",
-    *_extra,
-]
-
 app = FastAPI(title="Iris API")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_allow_origins,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
-    allow_credentials=True,
+    allow_origin_regex=".*",
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
