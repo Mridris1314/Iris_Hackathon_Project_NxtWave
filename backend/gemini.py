@@ -1,3 +1,4 @@
+import asyncio
 import os
 import httpx
 
@@ -45,8 +46,14 @@ async def describe_image(image_base64: str, prompt: str, mode: str = "scene") ->
         ],
     }
 
+    _retryable = {429, 503}
+    _delays = [1, 2, 4]
     async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.post(url, json=body, headers={"x-goog-api-key": key})
+        for attempt, delay in enumerate(_delays):
+            resp = await client.post(url, json=body, headers={"x-goog-api-key": key})
+            if resp.status_code not in _retryable or attempt == len(_delays) - 1:
+                break
+            await asyncio.sleep(delay)
 
     if resp.status_code == 429:
         raise RuntimeError(
