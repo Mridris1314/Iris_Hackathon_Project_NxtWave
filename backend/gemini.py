@@ -1,8 +1,17 @@
 import os
 import httpx
 
+# Per-mode generation configs: text reading needs high token limit and low temp
+# for accuracy; object ID needs low temp for decisive answers; scene can be
+# slightly warmer to produce natural language.
+_MODE_CONFIGS = {
+    "text":   {"temperature": 0.1, "maxOutputTokens": 2048, "topP": 0.95},
+    "object": {"temperature": 0.1, "maxOutputTokens": 768,  "topP": 0.9},
+    "scene":  {"temperature": 0.2, "maxOutputTokens": 1024, "topP": 0.85},
+}
 
-async def describe_image(image_base64: str, prompt: str) -> str:
+
+async def describe_image(image_base64: str, prompt: str, mode: str = "scene") -> str:
     key = os.getenv("GEMINI_API_KEY")
     if not key:
         raise RuntimeError("Server is missing GEMINI_API_KEY.")
@@ -27,11 +36,7 @@ async def describe_image(image_base64: str, prompt: str) -> str:
                 ]
             }
         ],
-        "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": 512,
-            "topP": 0.8,
-        },
+        "generationConfig": _MODE_CONFIGS.get(mode, _MODE_CONFIGS["scene"]),
         "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -40,7 +45,7 @@ async def describe_image(image_base64: str, prompt: str) -> str:
         ],
     }
 
-    async with httpx.AsyncClient(timeout=45) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(url, json=body, headers={"x-goog-api-key": key})
 
     if resp.status_code == 429:
@@ -57,10 +62,23 @@ async def describe_image(image_base64: str, prompt: str) -> str:
     payload = resp.json()
     candidates = payload.get("candidates", [])
     if not candidates:
+        # promptFeedback block (e.g. image flagged before generation)
+        block = payload.get("promptFeedback", {}).get("blockReason", "")
+        if block:
+            raise RuntimeError(
+                "This image was blocked by the safety filter. Try a different photo."
+            )
         raise RuntimeError("No response from the vision model. Please try again.")
 
-    parts = candidates[0].get("content", {}).get("parts", [])
-    text = " ".join(p.get("text", "") for p in parts).strip()
+    candidate = candidates[0]
+    finish_reason = candidate.get("finishReason", "")
+    if finish_reason == "SAFETY":
+        raise RuntimeError(
+            "The model's response was blocked by a safety filter. Try a different image."
+        )
+
+    parts = candidate.get("content", {}).get("parts", [])
+    text = "\n".join(p.get("text", "") for p in parts).strip()
     if not text:
         raise RuntimeError("The model returned an empty response. Please try again.")
     return text

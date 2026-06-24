@@ -400,13 +400,13 @@ export default function Home() {
               {voiceMode ? "Voice on" : "Voice"}
             </button>
 
-            {!camReady && status === "ready" && (
+            {status === "ready" && (
               <button
                 onClick={() => fileRef.current?.click()}
                 className="flex items-center gap-2 rounded-2xl border border-line bg-surface/80 px-4 py-2.5 text-sm text-bone hover:border-iris transition-colors"
               >
                 <Upload size={15} />
-                Upload photo
+                Upload
               </button>
             )}
           </div>

@@ -135,7 +135,7 @@ async def describe(
         raise HTTPException(400, "Mode must be scene, text, or object.")
     prompt = build_prompt(body.mode, body.lang)
     try:
-        text = await describe_image(body.image_base64, prompt)
+        text = await describe_image(body.image_base64, prompt, body.mode)
     except Exception as exc:
         raise HTTPException(502, str(exc))
     db.add(
